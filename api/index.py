@@ -1,4 +1,4 @@
-from flask importFlask、request、jsonify、render_template_string
+from flask import Flask, request, jsonify, render_template_string
 import requests
 
 app = Flask(__name__)
@@ -45,7 +45,7 @@ HTML_PAGE = """
             
             document.getElementById('result_panel').style.display = "block";
             
-如果 (action === 'release') {
+            if(action === 'release') {
                 document.getElementById('phone_display').innerText = "释放中...";
                 document.getElementById('sms_display').innerText = "正在切断旧号码...";
             } else {
@@ -59,19 +59,16 @@ HTML_PAGE = """
             })
             .then(res => res.json())
             .then(data => {
-                // 核心修复：独立处理释放指令，阻止报错逻辑，强行加入前端提示
-如果 (action === 'release') {
+                if (action === 'release') {
                     document.getElementById('phone_display').innerText = "已释放";
                     document.getElementById('phone_display').style.color = "#94a3b8"; 
-                    document.getElementById('sms_display').innerHTML = "旧号码已成功退回！<br><br><span style='color: #ef4444;'>⚠️ 为避免触发上游缓存机制拿到旧号，请等待 10 秒钟后，再点击按钮 1 提取新号码。</span>";
-返回;
+                    document.getElementById('sms_display').innerHTML = "旧号码已成功退回！<br><br><span style='color: #ef4444;'>⚠️ 为避免触发缓存拿到旧号，请等待 10 秒钟后，再点击按钮 1 提取新号。</span>";
+                    return;
                 }
 
-                // 正常的拿号逻辑
                 document.getElementById('phone_display').style.color = "#4ade80"; 
                 if(data && data.card) {
                     document.getElementById('phone_display').innerText = data.card.phone;
-                    
                     let receives = data.card.receives;
                     if(receives && receives.length > 0) {
                         let smsContent = receives.map(item => typeof item === 'string' ? item : JSON.stringify(item)).join('<br><hr>');
@@ -103,15 +100,11 @@ def proxy(action):
     target_url = f"https://eazysms.cc/api/{action}"
     headers = {
         "User-Agent": "Mozilla/5.0",
-“接受”：“application/json”，
-        “Content-Type”: “application/json”
+        "Accept": "application/json",
+        "Content-Type": "application/json"
     }
-    尝试：
+    try:
         response = requests.post(target_url, json=request.json, headers=headers, timeout=15)
-        返回 jsonify(response.json())
+        return jsonify(response.json())
     except Exception as e:
         return jsonify({"error": "连接超时"})
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080)
-#force update
